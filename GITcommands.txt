@@ -2,7 +2,7 @@
 git clone https://github.com/M1rzouk/ERP-SOTAVI.git
 2. Sauvegarder ton travail
 git add .
-git commit -m "update feature X"
+git commit -m "Initial ERP project"
 git push
 3. Récupérer les changements
 git pull
