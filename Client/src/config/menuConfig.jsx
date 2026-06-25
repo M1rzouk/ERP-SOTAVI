@@ -7,7 +7,8 @@ import HistoryIcon from '@mui/icons-material/History';
 import SettingsIcon from '@mui/icons-material/Settings';
 import DangerousIcon from '@mui/icons-material/Dangerous';
 import { Folder as FolderIcon } from '@mui/icons-material';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle'; 
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import BarChartIcon from '@mui/icons-material/BarChart';
 
 const menuConfig = [
   {
@@ -17,6 +18,14 @@ const menuConfig = [
     icon: <DashboardIcon />,
     route: "/",
     UserRole: ["All"]
+  },
+  {
+    type: "collapse",
+    name: "Statistiques",
+    key: "statistiques",
+    icon: <BarChartIcon />,
+    route: "/statistiques",
+    UserRole: ["All"] // ou ["chef centre", "Bureau d'ordre"]
   },
   {
     type: "collapse",

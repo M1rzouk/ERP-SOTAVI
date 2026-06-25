@@ -26,7 +26,7 @@ import SearchBar from './SearchBar';
 import hwasPdp from './../../assets/pdps/hwas.png';
 import NotificationMenu from './../../shared/components/NotificationMenu';
 import { useAuth } from './../../core/contexts/AuthContext';
-const drawerWidth = 300;
+const drawerWidth = 330;
 
 const AppBarStyled = styled(MuiAppBar, {
   shouldForwardProp: (prop) => prop !== 'open',

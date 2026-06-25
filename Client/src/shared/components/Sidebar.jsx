@@ -17,7 +17,7 @@ import useMediaQuery from '@mui/material/useMediaQuery';
 import menuConfig from './../../config/menuConfig';
 import hwasPdp from './../../assets/pdps/hwas.png';
 
-const drawerWidth = 300;
+const drawerWidth = 330;
 
 const openedMixin = (theme) => ({
   width: drawerWidth,

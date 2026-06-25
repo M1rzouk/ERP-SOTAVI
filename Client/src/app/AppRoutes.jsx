@@ -15,6 +15,7 @@ const Profile = lazy(() => import('../features/Profile/Pages/Profile'));
 const Mortality = lazy(() => import('./../features/production/pages/Mortality/Mortality'));
 const Dossiers = lazy(() => import('./../features/Registry office/Pages/Dossiers/Dossiers'));
 const Validation = lazy(() => import('./../features/Registry office/pages/validation/Validation'));
+const Statistics = lazy(() => import('./../features/Registry office/pages/statistics/Statistics'));
 
 export default function AppRoutes() {
   return (
@@ -33,6 +34,7 @@ export default function AppRoutes() {
           <Route path="profile" element={<Profile />} />
           <Route path="dossiers" element={<Dossiers />} />
           <Route path="validation" element={<Validation />} />
+          <Route path="statistiques" element={<Statistics />} />
         </Route>
       </Routes>
     </Suspense>
