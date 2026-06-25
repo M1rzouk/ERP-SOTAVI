@@ -1,0 +1,39 @@
+:root {
+  --scrollbar-track: rgba(0, 0, 0, 0.05);
+  --scrollbar-thumb: #FFC107;
+  --scrollbar-thumb-hover: #FF8F00;
+}
+
+/* Mode sombre : ces variables seront écrasées dans le thème */
+[data-theme="dark"] {
+  --scrollbar-track: rgba(255, 255, 255, 0.05);
+  --scrollbar-thumb: #FFC107;
+  --scrollbar-thumb-hover: #FF8F00;
+}
+
+/* Appliquer à TOUS les éléments scrollables */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+  border-radius: 10px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 10px;
+  transition: background 0.2s ease;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+

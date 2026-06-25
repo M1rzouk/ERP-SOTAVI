@@ -1,15 +1,17 @@
-// main.jsx or index.js
+// main.jsx
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { BrowserRouter } from 'react-router-dom';
-import App from './App';
+import { HashRouter } from 'react-router-dom'; // <-- CHANGE #1: Import HashRouter
+import App from './app/App';
+import './shared/styles/globalScrollbar.css';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
-  <BrowserRouter>
+  <HashRouter> {/* <-- CHANGE #2: Use HashRouter here */}
     <App />
-  </BrowserRouter>
+  </HashRouter>
 );
 
+// Keep this HMR block! It's harmless and only works in development.
 if (import.meta.hot) {
   import.meta.hot.accept(() => {
     window.location.reload();

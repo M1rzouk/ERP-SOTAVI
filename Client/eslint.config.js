@@ -6,6 +6,8 @@ import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
   globalIgnores(['dist']),
+  
+  // --- React / Browser files (your existing config) ---
   {
     files: ['**/*.{js,jsx}'],
     extends: [
@@ -16,6 +18,24 @@ export default defineConfig([
     languageOptions: {
       globals: globals.browser,
       parserOptions: { ecmaFeatures: { jsx: true } },
+    },
+  },
+
+  // --- Electron / Node.js files (NEW) ---
+  {
+    files: ['electron/**/*.js'],
+    languageOptions: {
+      globals: {
+        ...globals.node,      // adds process, __dirname, require, etc.
+        ...globals.es2021,    // optional, adds modern JS globals
+      },
+      parserOptions: {
+        ecmaVersion: 'latest',
+        sourceType: 'module',
+      },
+    },
+    rules: {
+      // You can add Node-specific rules here if needed
     },
   },
 ])

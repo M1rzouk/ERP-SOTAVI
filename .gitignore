@@ -20,3 +20,18 @@ build/
 # OS
 .DS_Store
 Thumbs.db
+
+# Builds Electron / installateurs
+release/
+Client/release/
+dist/
+Client/dist/
+
+# Fichiers temporaires / notes perso (si vous ne voulez pas les partager)
+*.txt
+architecture.txt
+commands.txt
+profile.txt
+
+# PDFs générés ou uploadés (si ce n'est pas du code source)
+Client/public/pdfs/
