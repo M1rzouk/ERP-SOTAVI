@@ -1,17 +1,4 @@
-// modules/auth/auth.validations.js
-const Joi = require('joi');
-
-// Schéma de validation pour le login
-const loginSchema = Joi.object({
-  matricule: Joi.string().required().messages({
-    'string.empty': 'Le matricule est requis'
-  }),
-  password: Joi.string().required().messages({
-    'string.empty': 'Le mot de passe est requis'
-  })
-});
-
-// Schéma de validation pour la création d'utilisateur
+// Ajouter à modules/auth/auth.validations.js
 const createUserSchema = Joi.object({
   matricule: Joi.string().required().messages({
     'string.empty': 'Le matricule est requis'
@@ -33,19 +20,6 @@ const createUserSchema = Joi.object({
   })
 });
 
-// Middleware de validation pour le login
-exports.validateLogin = (req, res, next) => {
-  const { error } = loginSchema.validate(req.body, { abortEarly: false });
-  if (error) {
-    return res.status(400).json({
-      success: false,
-      errors: error.details.map(d => d.message)
-    });
-  }
-  next();
-};
-
-// Middleware de validation pour la création d'utilisateur
 exports.validateCreateUser = (req, res, next) => {
   const { error } = createUserSchema.validate(req.body, { abortEarly: false });
   if (error) {

@@ -17,6 +17,7 @@ app.use(morgan('dev'));   // logs dans la console
 // Modules
 app.use('/api/auth', require('./modules/auth/auth.routes'));
 app.use('/api/production/lots', require('./modules/production/lot/lot.routes'));
+app.use('/api/admin', require('./modules/Admin/admin.routes'));
 
 // 404
 app.use((req, res) => {

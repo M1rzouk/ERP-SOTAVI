@@ -40,35 +40,51 @@ import {
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import {
-  Search as SearchIcon,
-  FilterList as FilterListIcon,
-  Visibility as VisibilityIcon,
-  AttachFile as AttachFileIcon,
+  GetApp as GetAppIcon,
   PictureAsPdf as PdfIcon,
-  History as HistoryIcon,
-  Print as PrintIcon,
-  Edit as EditIcon,
-  Save as SaveIcon,
-  Close as CloseIcon,
-  CloudUpload as UploadIcon,
-  Download as DownloadIcon,
-  OpenInNew as OpenInNewIcon,
+  TableChart as ExcelIcon,
+  Refresh as RefreshIcon,
+  TrendingUp as TrendingUpIcon,
+  TrendingDown as TrendingDownIcon,
+  People as PeopleIcon,
+  Email as EmailIcon,
   CheckCircle as CheckCircleIcon,
   Pending as PendingIcon,
-  GetApp as GetAppIcon,
+  Cancel as CancelIcon,
+  Dashboard as DashboardIcon,
+  ArrowUpward as ArrowUpwardIcon,
+  ArrowDownward as ArrowDownwardIcon,
+  Star as StarIcon,
+  EmojiEvents as EmojiEventsIcon,
+  CalendarToday as CalendarIcon,
+  FilterList as FilterListIcon,
+  Clear as ClearIcon,
+  CompareArrows as CompareArrowsIcon,
+  Warning as WarningIcon,
+  PriorityHigh as PriorityHighIcon,
+  Flag as FlagIcon,
+  Scanner as ScannerIcon,
+  FileCopy as FileCopyIcon,
+  Image as ImageIcon,
+  Search as SearchIcon,
+  Visibility as VisibilityIcon,
+  Print as PrintIcon,
+  CloudUpload as UploadIcon,
+  Close as CloseIcon,
   Fullscreen as FullscreenIcon,
   FullscreenExit as FullscreenExitIcon,
+  Folder as FolderIcon,
+  Delete as DeleteIcon, // Ajouté
 } from '@mui/icons-material';
-import TableChartIcon from '@mui/icons-material/TableChart';
-import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import FilterDrawer from './../../Components/IncomingMail/FilterDrawer';
 import { exportToPDF, exportToExcel } from './../../Components/IncomingMail/ExportUtils';
+import ScanDocument from './../../Components/IncomingMail/ScanDocument';
 import AssignToDossierDialog from '../../Components/Dossiers/AssignToDossierDialog';
-import { Folder as FolderIcon } from '@mui/icons-material';
+
 // ==================== STYLED COMPONENTS (thématisés) ====================
 const PageHeader = styled(Box)(({ theme }) => ({
   marginBottom: theme.spacing(4),
@@ -250,6 +266,14 @@ export default function IncomingMail() {
   const iframeRef = React.useRef(null);
   const [isFullscreen, setIsFullscreen] = React.useState(false);
 
+  const [scanDialogOpen, setScanDialogOpen] = React.useState(false);
+  const [scanVersion, setScanVersion] = React.useState('V1');
+  const [currentCourrierForScan, setCurrentCourrierForScan] = React.useState(null);
+
+  // --- Nouveaux états pour la création avec scan ---
+  const [scannedFileForCreation, setScannedFileForCreation] = React.useState(null);
+  const [isCreatingMode, setIsCreatingMode] = React.useState(false);
+
   // Filtrage
   const getStatusFilter = () => {
     switch (tabValue) {
@@ -293,16 +317,7 @@ export default function IncomingMail() {
 
     return statusMatch && searchMatch && advancedMatch;
   });
-  {/** 
-  const filteredCourriers = courriers.filter(c => {
-    const statusMatch = getStatusFilter() ? c.statut === getStatusFilter() : true;
-    const searchMatch = searchTerm === '' ||
-      c.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.expediteur.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.sujet.toLowerCase().includes(searchTerm.toLowerCase());
-    return statusMatch && searchMatch;
-  });
-*/}
+
   const stats = {
     total: courriers.length,
     enCours: courriers.filter(c => c.statut === 'En cours').length,
@@ -320,31 +335,53 @@ export default function IncomingMail() {
     setDetailDialogOpen(true);
   };
 
+  // --- MODIFICATION : handleAddCourrier avec fichier obligatoire ---
   const handleAddCourrier = () => {
-    if (!newCourrier.expediteur || !newCourrier.sujet || !uploadedFile) {
-      showNotification('Veuillez remplir tous les champs et ajouter le PDF V1', 'warning');
+    // Vérifier les champs obligatoires
+    if (!newCourrier.expediteur || !newCourrier.sujet) {
+      showNotification('Veuillez remplir les champs Expéditeur et Sujet', 'warning');
       return;
     }
+
+    // Vérifier qu'un fichier V1 a été fourni (upload ou scan)
+    if (!uploadedFile && !scannedFileForCreation) {
+      showNotification('Veuillez ajouter le scan V1 (upload ou scanner)', 'warning');
+      return;
+    }
+
+    // Utiliser le fichier uploadé ou le fichier scanné
+    const fileToUse = uploadedFile || scannedFileForCreation;
+    if (!fileToUse) {
+      showNotification('Aucun fichier V1 trouvé', 'error');
+      return;
+    }
+
     const newId = `CE-${new Date().getFullYear()}-${String(courriers.length + 1).padStart(3, '0')}`;
     const courrier = {
       id: newId,
       date: newCourrier.date,
       expediteur: newCourrier.expediteur,
       sujet: newCourrier.sujet,
-      assigneA: newCourrier.assigneA,
-      initiales: newCourrier.assigneA.split(' ').map(n => n[0]).join(''),
+      assigneA: newCourrier.assigneA || 'Non assigné',
+      initiales: (newCourrier.assigneA || 'NA').split(' ').map(n => n[0]).join(''),
       statut: 'En cours',
-      version1: URL.createObjectURL(uploadedFile),
+      version1: URL.createObjectURL(fileToUse),
       version2: null,
       historique: [
-        { date: new Date().toISOString(), action: 'Réception papier et scan V1', user: 'Agent' },
+        {
+          date: new Date().toISOString(),
+          action: 'Réception papier et scan V1',
+          user: 'Agent'
+        },
       ],
       documentPhysique: 'Bureau ordre',
     };
+
     setCourriers([courrier, ...courriers]);
     setFormDialogOpen(false);
     setNewCourrier({ expediteur: '', sujet: '', assigneA: '', date: new Date().toISOString().split('T')[0] });
     setUploadedFile(null);
+    setScannedFileForCreation(null);
     showNotification(`Courrier ${newId} créé avec succès`, 'success');
   };
 
@@ -367,6 +404,7 @@ export default function IncomingMail() {
     showNotification('Export Excel généré avec succès !', 'success');
     handleExportClose();
   };
+
   const handleScanFinal = () => {
     if (!selectedCourrier || !finalPdfFile) return;
     const updated = courriers.map(c =>
@@ -389,9 +427,7 @@ export default function IncomingMail() {
 
   const handlePrintBordereau = (courrier) => {
     const doc = new jsPDF('p', 'mm', 'a4');
-    // Couleurs du thème récupérées dynamiquement (ici en dur pour le PDF)
-    const primaryColor = theme.palette.primary.main;
-    const primaryRgb = [255, 193, 7]; // Valeur fixe car on ne peut pas utiliser theme directement dans jsPDF
+    const primaryRgb = [255, 193, 7];
     doc.setFillColor(primaryRgb[0], primaryRgb[1], primaryRgb[2]);
     doc.rect(0, 0, 210, 40, 'F');
     doc.setTextColor(26, 26, 26);
@@ -438,7 +474,6 @@ export default function IncomingMail() {
     }
   };
 
-  // Écouter les changements de plein écran (pour synchroniser l'icône)
   React.useEffect(() => {
     const handleFullscreenChange = () => {
       setIsFullscreen(!!document.fullscreenElement);
@@ -446,6 +481,55 @@ export default function IncomingMail() {
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, []);
+
+  // --- MODIFICATION : handleScanSave avec gestion du mode création ---
+  const handleScanSave = (scanData) => {
+    if (!scanData.files || scanData.files.length === 0) {
+      showNotification('Aucun fichier scanné', 'warning');
+      return;
+    }
+
+    // Si on est en mode création, on stocke le fichier dans l'état et on quitte
+    if (isCreatingMode) {
+      const scannedFile = scanData.files[0];
+      if (scannedFile) {
+        // Créer un objet File à partir du blob
+        const file = new File([scannedFile], `scan_V1_${Date.now()}.pdf`, { type: 'application/pdf' });
+        setScannedFileForCreation(file);
+        showNotification('Scan V1 importé avec succès pour le nouveau courrier', 'success');
+      }
+      setIsCreatingMode(false);
+      // Ne pas fermer le dialogue de création, on le laisse ouvert avec le fichier ajouté
+      return;
+    }
+
+    // Sinon, mode normal : mise à jour du courrier existant
+    const updatedCourriers = courriers.map(c => {
+      if (c.id === currentCourrierForScan?.id) {
+        const newVersion = scanData.version === 'V1' ? 'version1' : 'version2';
+        const fileUrl = scanData.files[0]?.url || null;
+        return {
+          ...c,
+          [newVersion]: fileUrl,
+          statut: scanData.version === 'V2' ? 'Traité' : c.statut,
+          documentPhysique: scanData.version === 'V2' ? 'Archivé' : c.documentPhysique,
+          historique: [
+            ...c.historique,
+            {
+              date: new Date().toISOString(),
+              action: `Scan ${scanData.version} - ${scanData.metadata.nombrePages} page(s)`,
+              user: 'Agent Saisie',
+            },
+          ],
+        };
+      }
+      return c;
+    });
+
+    setCourriers(updatedCourriers);
+    showNotification(`Scan ${scanData.version} terminé avec succès !`, 'success');
+    // Ne pas fermer ici, le composant ScanDocument le fait déjà via son onClose
+  };
 
   // ==================== RENDU ====================
   return (
@@ -572,11 +656,11 @@ export default function IncomingMail() {
             transformOrigin={{ vertical: 'top', horizontal: 'right' }}
           >
             <MenuItem onClick={handleExportPDF}>
-              <PictureAsPdfIcon sx={{ mr: 1, color: '#FFC107' }} />
+              <PdfIcon sx={{ mr: 1, color: '#FFC107' }} />
               Exporter en PDF
             </MenuItem>
             <MenuItem onClick={handleExportExcel}>
-              <TableChartIcon sx={{ mr: 1, color: '#FFC107' }} />
+              <ExcelIcon sx={{ mr: 1, color: '#FFC107' }} />
               Exporter en Excel
             </MenuItem>
           </Menu>
@@ -656,28 +740,97 @@ export default function IncomingMail() {
                   </>
                 )}
                 <TableCell>
+                  {/* Voir détails */}
                   <Tooltip title="Voir détails">
                     <IconButton size="small" onClick={() => handleViewDetails(c)}>
                       <VisibilityIcon fontSize="small" sx={{ color: theme.palette.primary.main }} />
                     </IconButton>
                   </Tooltip>
+
+                  {/* Imprimer bordereau */}
                   <Tooltip title="Imprimer bordereau">
                     <IconButton size="small" onClick={() => handlePrintBordereau(c)}>
                       <PrintIcon fontSize="small" sx={{ color: theme.palette.primary.main }} />
                     </IconButton>
                   </Tooltip>
+
+                  {/* Ajouter version finale (ancien scan V2) */}
                   {c.statut === 'En cours' && !c.version2 && (
-                    <Tooltip title="Ajouter version finale">
+                    <Tooltip title="Ajouter version finale (via scan V2)">
                       <IconButton size="small" onClick={() => { setSelectedCourrier(c); setScanFinalDialogOpen(true); }}>
                         <CheckCircleIcon fontSize="small" sx={{ color: theme.palette.success.main }} />
                       </IconButton>
                     </Tooltip>
                   )}
+
+                  {/* Assigner à un dossier */}
                   <Tooltip title="Assigner à un dossier">
                     <IconButton size="small" onClick={() => { setCourrierToAssign(c); setAssignDialogOpen(true); }}>
                       <FolderIcon fontSize="small" sx={{ color: theme.palette.info.main }} />
                     </IconButton>
                   </Tooltip>
+
+                  {/* --- SCAN V1 (caché si Traité) --- */}
+                  {c.statut !== 'Traité' && (
+                    <>
+                      {!c.version1 ? (
+                        <Tooltip title="Scanner V1 (version initiale)">
+                          <IconButton
+                            size="small"
+                            onClick={() => {
+                              setCurrentCourrierForScan(c);
+                              setScanVersion('V1');
+                              setScanDialogOpen(true);
+                            }}
+                          >
+                            <ScannerIcon fontSize="small" sx={{ color: '#FFC107' }} />
+                          </IconButton>
+                        </Tooltip>
+                      ) : (
+                        <Tooltip title="Voir V1">
+                          <IconButton
+                            size="small"
+                            onClick={() => {
+                              setSelectedCourrier(c);
+                              setVersionToShow('V1');
+                              setPdfViewerOpen(true);
+                            }}
+                          >
+                            <PdfIcon fontSize="small" sx={{ color: '#4CAF50' }} />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                    </>
+                  )}
+
+                  {/* --- SCAN V2 (toujours affiché, mais scanner uniquement si non traité) --- */}
+                  {c.statut !== 'Traité' && !c.version2 ? (
+                    <Tooltip title="Scanner V2 (version finale)">
+                      <IconButton
+                        size="small"
+                        onClick={() => {
+                          setCurrentCourrierForScan(c);
+                          setScanVersion('V2');
+                          setScanDialogOpen(true);
+                        }}
+                      >
+                        <CheckCircleIcon fontSize="small" sx={{ color: '#FFC107' }} />
+                      </IconButton>
+                    </Tooltip>
+                  ) : c.version2 ? (
+                    <Tooltip title="Voir V2">
+                      <IconButton
+                        size="small"
+                        onClick={() => {
+                          setSelectedCourrier(c);
+                          setVersionToShow('V2');
+                          setPdfViewerOpen(true);
+                        }}
+                      >
+                        <CheckCircleIcon fontSize="small" sx={{ color: '#4CAF50' }} />
+                      </IconButton>
+                    </Tooltip>
+                  ) : null}
                 </TableCell>
               </TableRow>
             ))}
@@ -685,7 +838,7 @@ export default function IncomingMail() {
         </Table>
       </StyledTableContainer>
 
-      {/* DIALOG NOUVEAU COURRIER */}
+      {/* ==================== DIALOG NOUVEAU COURRIER (MODIFIÉ) ==================== */}
       <Dialog open={formDialogOpen} onClose={() => setFormDialogOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle>
           <Typography variant="h6">Nouveau courrier entrant</Typography>
@@ -693,28 +846,15 @@ export default function IncomingMail() {
         <DialogContent>
           <TextField
             fullWidth
-            label="Expéditeur"
+            label="Expéditeur *"
             size="small"
             value={newCourrier.expediteur}
             onChange={e => setNewCourrier({ ...newCourrier, expediteur: e.target.value })}
-            sx={{
-              mb: 2,
-              mt: 1,
-              /*"& .MuiInputBase-root": {
-                height: 40
-              },
-              "& .MuiInputBase-input": {
-                fontSize: "18px"
-              },
-              "& .MuiInputLabel-root": {
-                fontSize: "12px",
-                padding: "3px"
-              }*/
-            }}
+            sx={{ mb: 2, mt: 1 }}
           />
           <TextField
             fullWidth
-            label="Sujet"
+            label="Sujet *"
             size="small"
             value={newCourrier.sujet}
             onChange={e => setNewCourrier({ ...newCourrier, sujet: e.target.value })}
@@ -737,18 +877,114 @@ export default function IncomingMail() {
             onChange={e => setNewCourrier({ ...newCourrier, date: e.target.value })}
             sx={{ mb: 2 }}
           />
-          <DropZone
-            isDragActive={isDragActive}
-            onDragOver={e => { e.preventDefault(); setIsDragActive(true); }}
-            onDragLeave={() => setIsDragActive(false)}
-            onDrop={e => { e.preventDefault(); setIsDragActive(false); handleFileUpload(e.dataTransfer.files[0]); }}
-            onClick={() => document.getElementById('pdf-upload').click()}
-          >
-            <input id="pdf-upload" type="file" accept="application/pdf" style={{ display: 'none' }} onChange={e => handleFileUpload(e.target.files[0])} />
-            <UploadIcon sx={{ fontSize: 40, color: theme.palette.primary.main }} />
-            <Typography variant="body2">Glissez-déposez le PDF scanné (V1) ou cliquez</Typography>
-            {uploadedFile && <Chip label={uploadedFile.name} sx={{ mt: 2 }} />}
-          </DropZone>
+
+          {/* Zone de téléchargement / Scan V1 */}
+          <Box sx={{ mt: 2, mb: 2 }}>
+            <Typography variant="subtitle2" gutterBottom>
+              Document scanné V1 <span style={{ color: 'red' }}>*</span>
+            </Typography>
+
+            {uploadedFile || scannedFileForCreation ? (
+              <Box sx={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'space-between',
+                p: 2, 
+                bgcolor: alpha(theme.palette.success.main, 0.1), 
+                borderRadius: 2,
+                border: `1px solid ${theme.palette.success.main}`
+              }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <CheckCircleIcon sx={{ color: theme.palette.success.main }} />
+                  <Typography variant="body2" fontWeight={500}>
+                    {(uploadedFile || scannedFileForCreation).name}
+                  </Typography>
+                  <Chip 
+                    label={`${((uploadedFile || scannedFileForCreation).size / 1024).toFixed(1)} KB`} 
+                    size="small" 
+                    sx={{ bgcolor: alpha(theme.palette.success.main, 0.1) }}
+                  />
+                </Box>
+                <Button 
+                  size="small" 
+                  color="error" 
+                  onClick={() => {
+                    setUploadedFile(null);
+                    setScannedFileForCreation(null);
+                  }}
+                  startIcon={<DeleteIcon />}
+                >
+                  Supprimer
+                </Button>
+              </Box>
+            ) : (
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                {/* Option 1 : Upload via drag & drop */}
+                <DropZone
+                  isDragActive={isDragActive}
+                  onDragOver={e => { e.preventDefault(); setIsDragActive(true); }}
+                  onDragLeave={() => setIsDragActive(false)}
+                  onDrop={e => { 
+                    e.preventDefault(); 
+                    setIsDragActive(false); 
+                    const file = e.dataTransfer.files[0];
+                    if (file && (file.type === 'application/pdf' || file.type.startsWith('image/'))) {
+                      setUploadedFile(file);
+                      setScannedFileForCreation(null); // effacer l'éventuel scan
+                    } else {
+                      showNotification('Veuillez sélectionner un fichier PDF ou image', 'error');
+                    }
+                  }}
+                  onClick={() => document.getElementById('pdf-upload-creation').click()}
+                  sx={{ py: 3 }}
+                >
+                  <input 
+                    id="pdf-upload-creation" 
+                    type="file" 
+                    accept=".pdf,.jpg,.jpeg,.png,.tiff" 
+                    style={{ display: 'none' }} 
+                    onChange={e => {
+                      const file = e.target.files[0];
+                      if (file) {
+                        setUploadedFile(file);
+                        setScannedFileForCreation(null);
+                      }
+                    }} 
+                  />
+                  <UploadIcon sx={{ fontSize: 36, color: theme.palette.primary.main, mb: 1 }} />
+                  <Typography variant="body2" color="text.secondary">
+                    Glissez-déposez ou cliquez pour importer un PDF / Image
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    Formats supportés : PDF, JPG, PNG, TIFF (max 50MB)
+                  </Typography>
+                </DropZone>
+
+                <Divider sx={{ my: 1 }}>OU</Divider>
+
+                {/* Option 2 : Scanner via l'outil de scan */}
+                <Button
+                  variant="outlined"
+                  startIcon={<ScannerIcon />}
+                  onClick={() => {
+                    setIsCreatingMode(true);
+                    setCurrentCourrierForScan({ id: 'temp' });
+                    setScanVersion('V1');
+                    setScanDialogOpen(true);
+                  }}
+                  sx={{ 
+                    py: 2, 
+                    borderColor: theme.palette.primary.main,
+                    color: theme.palette.primary.main,
+                    '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.05) }
+                  }}
+                >
+                  <ScannerIcon sx={{ mr: 1 }} />
+                  Scanner le document (via scanneur)
+                </Button>
+              </Box>
+            )}
+          </Box>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setFormDialogOpen(false)}>Annuler</Button>
@@ -869,17 +1105,32 @@ export default function IncomingMail() {
           </>
         )}
       </Dialog>
+
       <FilterDrawer
         open={filterDrawerOpen}
         onClose={() => setFilterDrawerOpen(false)}
         onApply={setAdvancedFilters}
         currentFilters={advancedFilters}
       />
+
       <AssignToDossierDialog
         open={assignDialogOpen}
         onClose={() => setAssignDialogOpen(false)}
         courrierId={courrierToAssign?.id}
         courrierRef={`${courrierToAssign?.id} - ${courrierToAssign?.sujet}`}
+      />
+
+      <ScanDocument
+        open={scanDialogOpen}
+        onClose={() => {
+          setScanDialogOpen(false);
+          setCurrentCourrierForScan(null);
+          setIsCreatingMode(false); // Réinitialiser le mode création
+        }}
+        onSave={handleScanSave}
+        courrierId={currentCourrierForScan?.id}
+        version={scanVersion}
+        title={`Scan de document - ${scanVersion}`}
       />
     </Box>
   );

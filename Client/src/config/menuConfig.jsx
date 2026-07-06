@@ -9,6 +9,7 @@ import DangerousIcon from '@mui/icons-material/Dangerous';
 import { Folder as FolderIcon } from '@mui/icons-material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import BarChartIcon from '@mui/icons-material/BarChart';
+import PeopleIcon from '@mui/icons-material/People';
 
 const menuConfig = [
   {
@@ -90,6 +91,14 @@ const menuConfig = [
     icon: <HistoryIcon />,
     route: "/Historique des Mortalité",
     UserRole: ["chef centre"]
+  },
+  {
+    type: "collapse",
+    name: "Gestion des utilisateurs",
+    key: "gestion-utilisateurs",
+    icon: <PeopleIcon />,
+    route: "/admin/users",
+    UserRole: ["Admin"] // Seuls les utilisateurs avec le rôle "Admin" verront ce lien
   },
   {
     type: "collapse",

@@ -1,4 +1,6 @@
+// modules/auth/auth.middleware.js
 const authService = require('./auth.service');
+const pool = require('../../config/db'); // ⚠️ IMPORTANT: Ajouter cette ligne
 
 function authenticate(req, res, next) {
   const authHeader = req.headers.authorization;
@@ -36,6 +38,7 @@ async function checkConnected(req, res, next) {
     );
     next();
   } catch (err) {
+    console.error('❌ Erreur checkConnected:', err);
     next(err);
   }
 }
