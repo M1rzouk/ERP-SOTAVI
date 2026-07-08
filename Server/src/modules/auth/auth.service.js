@@ -29,7 +29,7 @@ class AuthService {
     try {
       // 1. Rechercher l'employé par matricule
       const result = await pool.query(
-        `SELECT id, matricule, username, email, password_hash, full_name, is_active, is_connected
+        `SELECT id, matricule, username, email, password_hash, full_name, is_active, is_connected, pdp
          FROM employee 
          WHERE matricule = $1`,
         [matricule.trim()]
@@ -101,13 +101,15 @@ class AuthService {
         username: employee.username,
         email: employee.email,
         full_name: employee.full_name,
+        username: employee.username,
         is_active: employee.is_active,
+        pdp: employee.pdp,
         permissions: [...new Set(roles.flatMap(r => r.permissions))]
       };
 
-      return { 
-        token, 
-        employee: employeeData, 
+      return {
+        token,
+        employee: employeeData,
         roles: roles.map(r => ({ id: r.id, name: r.name }))
       };
 
@@ -143,19 +145,20 @@ class AuthService {
    */
   generateToken(employee, roles) {
     const permissions = [...new Set(roles.flatMap(r => r.permissions))];
-    
+
     const payload = {
       id: employee.id,
       matricule: employee.matricule,
       fullName: employee.full_name,
+      username: employee.username,
       email: employee.email,
       roles: roles.map(r => r.name),
       permissions: permissions
     };
 
     try {
-      return jwt.sign(payload, JWT_SECRET, { 
-        expiresIn: JWT_EXPIRES_IN 
+      return jwt.sign(payload, JWT_SECRET, {
+        expiresIn: JWT_EXPIRES_IN
       });
     } catch (error) {
       console.error('❌ Erreur lors de la génération du token:', error.message);
@@ -198,13 +201,13 @@ class AuthService {
   async refreshToken(token) {
     try {
       const decoded = this.verifyToken(token);
-      
+
       // Vérifier que l'utilisateur existe toujours
       const result = await pool.query(
         'SELECT id, is_active FROM employee WHERE id = $1',
         [decoded.id]
       );
-      
+
       if (result.rows.length === 0 || !result.rows[0].is_active) {
         throw new Error('Utilisateur non trouvé ou inactif');
       }
@@ -233,15 +236,15 @@ class AuthService {
 
       // Récupérer les infos de l'employé
       const employeeResult = await pool.query(
-        'SELECT id, matricule, full_name, email FROM employee WHERE id = $1',
+        'SELECT id, matricule, full_name, username, email FROM employee WHERE id = $1',
         [decoded.id]
       );
 
       const employee = employeeResult.rows[0];
-      
+
       // Générer un nouveau token
       return this.generateToken(employee, roles);
-      
+
     } catch (error) {
       console.error('❌ Erreur lors du rafraîchissement du token:', error.message);
       throw error;
@@ -259,11 +262,11 @@ class AuthService {
         'SELECT is_connected FROM employee WHERE id = $1',
         [employeeId]
       );
-      
+
       if (result.rows.length === 0) {
         return false;
       }
-      
+
       return result.rows[0].is_connected;
     } catch (error) {
       console.error('❌ Erreur lors de la vérification de connexion:', error.message);

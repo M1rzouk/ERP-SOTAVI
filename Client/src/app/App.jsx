@@ -16,18 +16,19 @@ export const ThemeContext = React.createContext({
   toggleDarkMode: () => {},
 });
 
+// Dans AuthenticatedApp
 function AuthenticatedApp() {
   const { darkMode, toggleDarkMode } = useThemeMode();
   const theme = getTheme(darkMode ? 'dark' : 'light');
-  const { isAuthenticated, loading, logout } = useAuth();
+  const { isAuthenticated, initialLoading, authLoading, logout } = useAuth();
 
-  // Auto-logout after 10 minutes
   useIdleTimeout(600000, () => {
     console.log('Idle timeout: logging out');
     logout();
   });
 
-  if (loading) {
+  // ✅ Le fallback ne s'affiche que lors du chargement initial
+  if (initialLoading) {
     return (
       <ThemeProvider theme={theme}>
         <CssBaseline />
@@ -64,3 +65,4 @@ export default function App() {
     </AuthProvider>
   );
 }
+

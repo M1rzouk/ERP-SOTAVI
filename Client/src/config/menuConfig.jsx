@@ -18,15 +18,15 @@ const menuConfig = [
     key: "Tableau de bord",
     icon: <DashboardIcon />,
     route: "/",
-    UserRole: ["All"]
+    UserRole: ["All"] 
   },
   {
     type: "collapse",
-    name: "Statistiques",
-    key: "statistiques",
+    name: "Statistiques Bureau d'Ordre",
+    key: "statistiques Bureau d'Ordre",
     icon: <BarChartIcon />,
     route: "/statistiques",
-    UserRole: ["All"] // ou ["chef centre", "Bureau d'ordre"]
+    UserRole: ["Agent Bureau d'Ordre"]
   },
   {
     type: "collapse",
@@ -34,7 +34,7 @@ const menuConfig = [
     key: "Courrier Entrant",
     icon: <MoveToInboxIcon />,
     route: "/Courrier Entrant",
-    UserRole: ["Bureau d'ordre"]
+    UserRole: ["Agent Bureau d'Ordre"] 
   },
   {
     type: "collapse",
@@ -42,7 +42,7 @@ const menuConfig = [
     key: "Courrier Sortant",
     icon: <OutboxIcon />,
     route: "/Courrier Sortant",
-    UserRole: ["Bureau d'ordre"]
+    UserRole: ["Agent Bureau d'Ordre"] 
   },
   {
     type: "collapse",
@@ -50,7 +50,7 @@ const menuConfig = [
     key: "dossiers",
     icon: <FolderIcon />,
     route: "/dossiers",
-    UserRole: ["All"]
+    UserRole: ["Agent Bureau d'Ordre"]
   },
   {
     type: "collapse",
@@ -58,7 +58,7 @@ const menuConfig = [
     key: "Validation",
     icon: <CheckCircleIcon />,
     route: "/validation",
-    UserRole: ["pdg"]
+    UserRole: ["Directeur Général"] 
   },
   {
     type: "collapse",
@@ -66,7 +66,7 @@ const menuConfig = [
     key: "Production des œufs",
     icon: <EggIcon />,
     route: "/Ouef Production",
-    UserRole: ["chef centre"]
+    UserRole: ["Chef de Centre"] 
   },
   {
     type: "collapse",
@@ -74,7 +74,7 @@ const menuConfig = [
     key: "Historique des Productions",
     icon: <HistoryIcon />,
     route: "/Historique des Productions",
-    UserRole: ["chef centre"]
+    UserRole: ["Chef de Centre"] 
   },
   {
     type: "collapse",
@@ -82,7 +82,7 @@ const menuConfig = [
     key: "Mortalité",
     icon: <DangerousIcon />,
     route: "/Mortalite",
-    UserRole: ["chef centre"]
+    UserRole: ["Chef de Centre"] 
   },
   {
     type: "collapse",
@@ -90,7 +90,7 @@ const menuConfig = [
     key: "Historique des Mortalité",
     icon: <HistoryIcon />,
     route: "/Historique des Mortalité",
-    UserRole: ["chef centre"]
+    UserRole: ["Chef de Centre"] 
   },
   {
     type: "collapse",
@@ -98,7 +98,7 @@ const menuConfig = [
     key: "gestion-utilisateurs",
     icon: <PeopleIcon />,
     route: "/admin/users",
-    UserRole: ["Admin"] // Seuls les utilisateurs avec le rôle "Admin" verront ce lien
+    UserRole: ["Administrateur"] 
   },
   {
     type: "collapse",
@@ -106,7 +106,7 @@ const menuConfig = [
     key: "Paramètres",
     icon: <SettingsIcon />,
     route: "/paramètres",
-    UserRole: ["All"]
+    UserRole: ["All"] 
   },
 ];
 

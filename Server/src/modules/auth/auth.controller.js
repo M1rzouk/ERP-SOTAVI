@@ -1,3 +1,4 @@
+// modules/auth/auth.controller.js
 const authService = require('./auth.service');
 
 exports.login = async (req, res, next) => {
@@ -13,25 +14,29 @@ exports.login = async (req, res, next) => {
         id: employee.id,
         matricule: employee.matricule,
         full_name: employee.full_name,
+        username: employee.username,
         email: employee.email,
+        pdp: employee.pdp,
+        permissions: employee.permissions || []   // ✅ AJOUT des permissions
       },
       roles: roles.map(r => r.name)
     });
   } catch (error) {
-    // Message générique pour la sécurité
+    console.error('❌ Erreur login:', error.message);
     res.status(401).json({
       success: false,
-      message: 'Matricule ou mot de passe invalide'
+      message: error.message || 'Matricule ou mot de passe invalide'
     });
   }
 };
 
 exports.logout = async (req, res, next) => {
   try {
-    const employeeId = req.user.id; // fourni par le middleware authenticate
+    const employeeId = req.user.id;
     await authService.logout(employeeId);
     res.json({ success: true, message: 'Déconnecté avec succès' });
   } catch (error) {
+    console.error('❌ Erreur logout:', error);
     res.status(500).json({ success: false, message: 'Erreur lors de la déconnexion' });
   }
 };

@@ -5,7 +5,14 @@ import {
   Typography,
   Button,
   Fade,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  useTheme,
 } from "@mui/material";
+import { createPortal } from "react-dom";
 import { useAuth } from "../../../core/contexts/AuthContext";
 import SotaviLogo from "./../../../assets/images/logos/SotaviLogo.png";
 import userIcon from "./../../../assets/icons/police-id.png";
@@ -222,12 +229,17 @@ const Field = ({ label, children }) => (
 
 // ── Main Login ──────────────────────────────────────────────────────────────
 export default function Login() {
-  const { login } = useAuth(); // 👈 get login from context
+  const theme = useTheme();
+  const { login } = useAuth();
   const [matricule, setMatricule] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [showPassword, setShowPassword] = React.useState(false);
   const [error, setError] = React.useState("");
   const [loading, setLoading] = React.useState(false);
+
+  const [dialogOpen, setDialogOpen] = React.useState(false);
+  const [dialogTitle, setDialogTitle] = React.useState("");
+  const [dialogMessage, setDialogMessage] = React.useState("");
 
   React.useEffect(() => {
     const savedMatricule = localStorage.getItem("lastMatricule");
@@ -240,163 +252,277 @@ export default function Login() {
     setLoading(true);
 
     try {
-      // Call the login function from AuthContext
-      // This will call authService.login() internally.
-      // For demo, authService should check credentials and return a user object.
       await login(matricule, password);
-      // If successful, context sets isAuthenticated = true
       localStorage.setItem("lastMatricule", matricule);
     } catch (err) {
-      setError("Invalid matricule or password.");
+      console.error("❌ Erreur login:", err.message);
+      const errorMsg = err.message || "";
+
+      if (
+        errorMsg.toLowerCase().includes("désactivé") ||
+        errorMsg.toLowerCase().includes("desactive") ||
+        errorMsg.toLowerCase().includes("contactez") ||
+        errorMsg.toLowerCase().includes("administrateur")
+      ) {
+        setDialogTitle("Compte désactivé");
+        setDialogMessage(
+          "Votre compte a été désactivé par l'administrateur.\n\n" +
+          "Veuillez contacter le service informatique (IT) pour réactiver votre accès.\n\n" +
+          "Si vous pensez qu'il s'agit d'une erreur, veuillez envoyer un email à : support@sotavi.com"
+        );
+        setDialogOpen(true);
+        setError("");
+      } else {
+        setError("Matricule ou mot de passe incorrect.");
+      }
     } finally {
       setLoading(false);
     }
   };
 
+  const handleCloseDialog = () => {
+    setDialogOpen(false);
+  };
+
+  // ===== Définition du fond dynamique basé sur le thème =====
+  const primaryColor = theme.palette.primary.main;
+  const backgroundDefault = theme.palette.background.default;
+
   return (
-    <Box
-      sx={{
-        minHeight: "100vh",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        background: "linear-gradient(145deg, #F0F4FF 0%, #FFF8E7 50%, #F0FDF4 100%)",
-        p: { xs: 2, sm: 3 },
-      }}
-    >
-      <Card
+    <>
+      {/* ─── PAGE DE CONNEXION ─── */}
+      <Box
         sx={{
+          minHeight: "100vh",
           display: "flex",
-          width: { xs: "100%", sm: 480, md: 900 },
-          maxWidth: 900,
-          borderRadius: "24px !important",
-          overflow: "hidden",
-          border: "none !important",
-          boxShadow: "0 24px 64px rgba(0,0,0,0.10), 0 4px 16px rgba(0,0,0,0.06) !important",
+          justifyContent: "center",
+          alignItems: "center",
+          background: "linear-gradient(145deg, #F0F4FF 0%, #FFF8E7 50%, #F0FDF4 100%)",
+          p: { xs: 2, sm: 3 },
         }}
       >
-        {/* LEFT PANEL – same as before */}
-        <Box
+        <Card
           sx={{
-            display: { xs: "none", md: "flex" },
-            flex: "0 0 42%",
-            flexDirection: "column",
-            justifyContent: "space-between",
-            background: "linear-gradient(160deg, #1E293B 0%, #0F172A 100%)",
-            p: 6,
-            position: "relative",
-            overflow: "hidden",
-          }}
-        >
-          <Box sx={{ position: "absolute", width: 320, height: 320, borderRadius: "50%", background: "rgba(255,193,7,0.12)", top: -80, right: -80 }} />
-          <Box sx={{ position: "absolute", width: 200, height: 200, borderRadius: "50%", background: "rgba(255,193,7,0.07)", bottom: 40, left: -60 }} />
-          <Box sx={{ position: "absolute", width: 80, height: 80, borderRadius: "50%", background: "rgba(255,193,7,0.15)", bottom: 120, right: 40 }} />
-
-          <Box sx={{ position: "relative", zIndex: 1 }}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-              <img src={SotaviLogo} alt="SOTAVI" width={36} height={36} style={{ objectFit: "contain" }} />
-              <Typography sx={{ fontSize: 20, fontWeight: 800, color: "#fff", letterSpacing: "-0.3px" }}>
-                SOTAVI
-              </Typography>
-            </Box>
-          </Box>
-
-          <PanelSlider />
-        </Box>
-
-        {/* RIGHT FORM */}
-        <Box
-          component="form"
-          onSubmit={handleSubmit}
-          sx={{
-            flex: 1,
             display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
-            background: "#FFFFFF",
-            px: { xs: 3, sm: 5, md: 6 },
-            py: { xs: 5, sm: 6, md: 7 },
+            width: { xs: "100%", sm: 480, md: 900 },
+            maxWidth: 900,
+            borderRadius: "24px !important",
+            overflow: "hidden",
+            border: "none !important",
+            boxShadow: "0 24px 64px rgba(0,0,0,0.10), 0 4px 16px rgba(0,0,0,0.06) !important",
+            bgcolor: "background.paper",
           }}
         >
-          <Box sx={{ display: { xs: "flex", md: "none" }, alignItems: "center", gap: 1.5, mb: 4 }}>
-            <img src={SotaviLogo} alt="SOTAVI" width={28} height={28} style={{ objectFit: "contain" }} />
-            <Typography sx={{ fontWeight: 700, fontSize: 17, color: "#1E293B" }}>SOTAVI</Typography>
-          </Box>
-
-          <Typography sx={{ fontSize: { xs: 22, sm: 26 }, fontWeight: 700, color: "#1E293B", mb: 0.5 }}>
-            Sign in
-          </Typography>
-          <Typography sx={{ color: "#94A3B8", fontSize: 13.5, mb: 4 }}>
-            Enter your credentials to continue
-          </Typography>
-
-          <Field label="Matricule">
-            <CustomInput
-              icon={userIcon}
-              placeholder="Enter your matricule"
-              value={matricule}
-              onChange={(e) => { setMatricule(e.target.value); setError(""); }}
-            />
-          </Field>
-
-          <Field label="Password">
-            <CustomInput
-              icon={lockIcon}
-              rightIcon={showPassword ? eyeOffIcon : eyeIcon}
-              onRightClick={() => setShowPassword(!showPassword)}
-              type={showPassword ? "text" : "password"}
-              placeholder="Enter your password"
-              value={password}
-              onChange={(e) => { setPassword(e.target.value); setError(""); }}
-            />
-          </Field>
-
-          <Fade in={!!error}>
-            <Typography sx={{ color: "#EF4444", fontSize: 12.5, mt: -1, mb: 1, minHeight: 18 }}>
-              {error}
-            </Typography>
-          </Fade>
-
-          <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 2.5 }}>
-            <Typography sx={{ fontSize: 12.5, color: "#64748B", cursor: "pointer", "&:hover": { color: "#FFC107" }, transition: "color 0.2s" }}>
-              Forgot password?
-            </Typography>
-          </Box>
-
-          <Button
-            type="submit"
-            fullWidth
-            disableElevation
-            disabled={loading}
+          {/* LEFT PANEL */}
+          <Box
             sx={{
-              height: 50,
-              borderRadius: "12px !important",
-              background: "#FFC107",
-              color: "#1A1A1A",
-              fontWeight: 700,
-              fontSize: 15,
-              textTransform: "none",
-              boxShadow: "0 6px 20px rgba(255,193,7,0.35)",
-              transition: "all 0.25s",
-              "&:hover": {
-                background: "#FFB300",
-                boxShadow: "0 10px 28px rgba(255,193,7,0.5)",
-                transform: "translateY(-1px)",
-              },
-              "&:active": { transform: "translateY(0)" },
+              display: { xs: "none", md: "flex" },
+              flex: "0 0 42%",
+              flexDirection: "column",
+              justifyContent: "space-between",
+              background: `linear-gradient(160deg, #1E293B 0%, #0F172A 100%)`,
+              p: 6,
+              position: "relative",
+              overflow: "hidden",
             }}
           >
-            Sign In →
-          </Button>
+            <Box sx={{ position: "absolute", width: 320, height: 320, borderRadius: "50%", background: `rgba(${primaryColor},0.12)`, top: -80, right: -80 }} />
+            <Box sx={{ position: "absolute", width: 200, height: 200, borderRadius: "50%", background: `rgba(${primaryColor},0.07)`, bottom: 40, left: -60 }} />
+            <Box sx={{ position: "absolute", width: 80, height: 80, borderRadius: "50%", background: `rgba(${primaryColor},0.15)`, bottom: 120, right: 40 }} />
 
-          <Typography sx={{ textAlign: "center", mt: 3, fontSize: 13, color: "#94A3B8" }}>
-            Don't have an account?{" "}
-            <Box component="span" sx={{ color: "#1E293B", fontWeight: 600, cursor: "pointer", "&:hover": { color: "#FFC107" }, transition: "color 0.2s" }}>
-              Create one →
+            <Box sx={{ position: "relative", zIndex: 1 }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                <img src={SotaviLogo} alt="SOTAVI" width={36} height={36} style={{ objectFit: "contain" }} />
+                <Typography sx={{ fontSize: 20, fontWeight: 800, color: "#fff", letterSpacing: "-0.3px" }}>
+                  SOTAVI
+                </Typography>
+              </Box>
             </Box>
-          </Typography>
-        </Box>
-      </Card>
-    </Box>
+
+            <PanelSlider />
+          </Box>
+
+          {/* RIGHT FORM */}
+          <Box
+            component="form"
+            onSubmit={handleSubmit}
+            sx={{
+              flex: 1,
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
+              background: "#FFFFFF",
+              px: { xs: 3, sm: 5, md: 6 },
+              py: { xs: 5, sm: 6, md: 7 },
+            }}
+          >
+            <Box sx={{ display: { xs: "flex", md: "none" }, alignItems: "center", gap: 1.5, mb: 4 }}>
+              <img src={SotaviLogo} alt="SOTAVI" width={28} height={28} style={{ objectFit: "contain" }} />
+              <Typography sx={{ fontWeight: 700, fontSize: 17, color: "#1E293B" }}>SOTAVI</Typography>
+            </Box>
+
+            <Typography sx={{ fontSize: { xs: 22, sm: 26 }, fontWeight: 700, color: "#1E293B", mb: 0.5 }}>
+              Sign in
+            </Typography>
+            <Typography sx={{ color: "#94A3B8", fontSize: 13.5, mb: 4 }}>
+              Enter your credentials to continue
+            </Typography>
+
+            <Field label="Matricule">
+              <CustomInput
+                icon={userIcon}
+                placeholder="Enter your matricule"
+                value={matricule}
+                onChange={(e) => { setMatricule(e.target.value); setError(""); }}
+              />
+            </Field>
+
+            <Field label="Password">
+              <CustomInput
+                icon={lockIcon}
+                rightIcon={showPassword ? eyeOffIcon : eyeIcon}
+                onRightClick={() => setShowPassword(!showPassword)}
+                type={showPassword ? "text" : "password"}
+                placeholder="Enter your password"
+                value={password}
+                onChange={(e) => { setPassword(e.target.value); setError(""); }}
+              />
+            </Field>
+
+            <Fade in={!!error}>
+              <Typography sx={{ color: "#EF4444", fontSize: 12.5, mt: -1, mb: 1, minHeight: 18 }}>
+                {error}
+              </Typography>
+            </Fade>
+
+            <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 2.5 }}>
+              <Typography sx={{ fontSize: 12.5, color: "#64748B", cursor: "pointer", "&:hover": { color: primaryColor }, transition: "color 0.2s" }}>
+                Forgot password?
+              </Typography>
+            </Box>
+
+            <Button
+              type="submit"
+              fullWidth
+              disableElevation
+              disabled={loading}
+              sx={{
+                height: 50,
+                borderRadius: "12px !important",
+                background: primaryColor,
+                color: "#1A1A1A",
+                fontWeight: 700,
+                fontSize: 15,
+                textTransform: "none",
+                boxShadow: `0 6px 20px rgba(${primaryColor},0.35)`,
+                transition: "all 0.25s",
+                "&:hover": {
+                  background: "#FFB300",
+                  boxShadow: `0 10px 28px rgba(${primaryColor},0.5)`,
+                  transform: "translateY(-1px)",
+                },
+                "&:active": { transform: "translateY(0)" },
+              }}
+            >
+              Sign In →
+            </Button>
+
+            <Typography sx={{ textAlign: "center", mt: 3, fontSize: 13, color: "#94A3B8" }}>
+              Don't have an account?{" "}
+              <Box component="span" sx={{ color: "#1E293B", fontWeight: 600, cursor: "pointer", "&:hover": { color: primaryColor }, transition: "color 0.2s" }}>
+                Create one →
+              </Box>
+            </Typography>
+          </Box>
+        </Card>
+      </Box>
+
+      {/* ─── DIALOGUE POUR COMPTE DÉSACTIVÉ (via un portail) ─── */}
+      {createPortal(
+        <Dialog
+          open={dialogOpen}
+          onClose={handleCloseDialog}
+          maxWidth="sm"
+          fullWidth
+          PaperProps={{
+            sx: {
+              borderRadius: 4,
+              p: 0,
+              overflow: 'hidden',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.25)',
+            },
+          }}
+        >
+          {/* Bandeau supérieur – couleur primaire du thème */}
+          <Box
+            sx={{
+              bgcolor: primaryColor,
+              py: 3,
+              px: 3,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 2,
+            }}
+          >
+            <Box
+              sx={{
+                width: 48,
+                height: 48,
+                borderRadius: '50%',
+                bgcolor: 'rgba(255,255,255,0.25)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: 28,
+              }}
+            >
+              🚫
+            </Box>
+            <Typography variant="h6" sx={{ fontWeight: 700, color: '#1A1A1A' }}>
+              {dialogTitle}
+            </Typography>
+          </Box>
+
+          <DialogContent sx={{ px: 4, py: 4 }}>
+            <DialogContentText
+              sx={{
+                color: 'text.primary',
+                fontSize: '1rem',
+                whiteSpace: 'pre-line',
+                lineHeight: 1.8,
+                textAlign: 'center',
+              }}
+            >
+              {dialogMessage}
+            </DialogContentText>
+          </DialogContent>
+
+          <DialogActions sx={{ px: 4, pb: 4, justifyContent: 'center' }}>
+            <Button
+              onClick={handleCloseDialog}
+              variant="contained"
+              sx={{
+                bgcolor: primaryColor,
+                color: '#1A1A1A',
+                borderRadius: 40,
+                px: 6,
+                py: 1.2,
+                fontWeight: 600,
+                fontSize: '0.95rem',
+                textTransform: 'none',
+                boxShadow: `0 4px 16px rgba(${primaryColor},0.35)`,
+                '&:hover': {
+                  bgcolor: '#FF8F00',
+                  boxShadow: `0 6px 24px rgba(${primaryColor},0.5)`,
+                },
+              }}
+            >
+              J'ai compris
+            </Button>
+          </DialogActions>
+        </Dialog>,
+        document.body
+      )}
+    </>
   );
 }

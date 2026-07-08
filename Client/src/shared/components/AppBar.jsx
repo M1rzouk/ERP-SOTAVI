@@ -23,9 +23,9 @@ import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
 
 import SotaviLogo from './../../assets/images/logos/SotaviLogo.png';
 import SearchBar from './SearchBar';
-import hwasPdp from './../../assets/pdps/hwas.png';
 import NotificationMenu from './../../shared/components/NotificationMenu';
 import { useAuth } from './../../core/contexts/AuthContext';
+
 const drawerWidth = 330;
 
 const AppBarStyled = styled(MuiAppBar, {
@@ -105,7 +105,6 @@ function ProfileMenuItem({ icon, label, description, onClick, danger = false }) 
           : 'transparent',
       }}
     >
-      {/* Icon wrap */}
       <Box
         sx={{
           width: 34,
@@ -136,7 +135,6 @@ function ProfileMenuItem({ icon, label, description, onClick, danger = false }) 
         })}
       </Box>
 
-      {/* Text */}
       <Box sx={{ flex: 1 }}>
         <Typography
           sx={{
@@ -156,7 +154,6 @@ function ProfileMenuItem({ icon, label, description, onClick, danger = false }) 
         )}
       </Box>
 
-      {/* Arrow (not on danger) */}
       {!danger && (
         <ChevronRightIcon sx={{ fontSize: 16, color: 'text.disabled' }} />
       )}
@@ -173,6 +170,15 @@ export default function AppBar({ open, handleDrawerOpen, onSearch }) {
   const [anchorEl, setAnchorEl] = React.useState(null);
   const navigate = useNavigate();
 
+  // 👇 Récupération de l'utilisateur connecté
+  const { user, logout } = useAuth();
+
+  // Informations utilisateur
+  const username = user?.username || 'Utilisateur';
+  const fullName = user?.name || 'Utilisateur';
+  const email = user?.email || 'email@non.defini';
+  const avatarSrc = user?.pdp || null; // si le backend renvoie une URL d'avatar
+  // Fonctions
   const activateSearch = () => setSearchActive(true);
   const deactivateSearch = () => setSearchActive(false);
   const handleSearch = (searchTerm) => { if (onSearch) onSearch(searchTerm); deactivateSearch(); };
@@ -180,11 +186,21 @@ export default function AppBar({ open, handleDrawerOpen, onSearch }) {
   const handleMenuClose = () => setAnchorEl(null);
   const handleProfile = () => { navigate('/profile'); handleMenuClose(); };
   const handleSettings = () => { navigate('/paramètres'); handleMenuClose(); };
-  const { logout } = useAuth();
 
   const handleLogout = () => {
-    logout();      // this calls authService.logout() and clears user
+    logout();
     handleMenuClose();
+  };
+
+  // Initiales pour l'avatar de fallback
+  const getInitials = (name) => {
+    if (!name) return '?';
+    return name
+      .split(' ')
+      .map(word => word.charAt(0))
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
   };
 
   return (
@@ -249,18 +265,19 @@ export default function AppBar({ open, handleDrawerOpen, onSearch }) {
               }}
               onClick={handleMenuOpen}
             >
-
               <Typography sx={{ fontWeight: 550, color: "black", pl: 1.5 }}>
-                Houssem
+                {username}
               </Typography>
               <Avatar
                 sx={{
                   width: 35,
                   height: 35,
                 }}
-                src={hwasPdp}
+                src={avatarSrc}
                 alt="profile"
-              />
+              >
+                {!avatarSrc && getInitials(fullName)}
+              </Avatar>
             </Box>
 
             {/* ── Profile Menu ── */}
@@ -279,8 +296,6 @@ export default function AppBar({ open, handleDrawerOpen, onSearch }) {
                   border: '1px solid',
                   borderColor: 'divider',
                   boxShadow: '0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06)',
-                  '&::before': { /* your arrow styles */ },
-                  // Force remove padding from the inner list
                   '& .MuiMenu-list': {
                     paddingTop: '0 !important',
                     paddingBottom: '0 !important',
@@ -288,11 +303,6 @@ export default function AppBar({ open, handleDrawerOpen, onSearch }) {
                 },
               }}
             >
-              {/* your content remains the same */}
-
-
-
-
               {/* ── Header ── */}
               <Box
                 sx={{
@@ -300,12 +310,8 @@ export default function AppBar({ open, handleDrawerOpen, onSearch }) {
                   pb: 1,
                   position: 'relative',
                   overflow: 'hidden',
-                  // ambient glow top-right
-
-
                 }}
               >
-                {/* Avatar + name row */}
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, position: 'relative', zIndex: 1 }}>
                   <Avatar
                     sx={{
@@ -314,20 +320,19 @@ export default function AppBar({ open, handleDrawerOpen, onSearch }) {
                       border: '2px solid rgba(255,193,7,0.55)',
                       flexShrink: 0,
                     }}
+                    src={avatarSrc}
                   >
-                    <img src={hwasPdp} alt="profile" width={48} height={48} />
+                    {!avatarSrc && getInitials(fullName)}
                   </Avatar>
                   <Box>
                     <Typography sx={{ fontWeight: 600, fontSize: 14.5, color: '#fff', lineHeight: 1.3 }}>
-                      Marzouk Houssem Eddine
+                      {fullName}
                     </Typography>
                     <Typography sx={{ fontSize: 11.5, color: 'rgba(255,255,255,0.42)', fontWeight: 300, mt: '1px' }}>
-                      houssem.marzouk.x@sotavi.com
+                      {email}
                     </Typography>
                   </Box>
                 </Box>
-
-
               </Box>
 
               <Divider />
@@ -381,7 +386,6 @@ export default function AppBar({ open, handleDrawerOpen, onSearch }) {
                   <Typography sx={{ fontSize: 10.5, color: 'text.secondary' }}>En ligne</Typography>
                 </Box>
               </Box>
-
             </Menu>
           </Box>
         )}

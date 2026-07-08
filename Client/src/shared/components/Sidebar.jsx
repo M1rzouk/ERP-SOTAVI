@@ -12,10 +12,11 @@ import ListItemButton from '@mui/material/ListItemButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
 import Avatar from '@mui/material/Avatar';
+import Typography from '@mui/material/Typography';
 import { NavLink } from 'react-router-dom';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import menuConfig from './../../config/menuConfig';
-import hwasPdp from './../../assets/pdps/hwas.png';
+import { useAuth } from './../../core/contexts/AuthContext';
 
 const drawerWidth = 330;
 
@@ -85,16 +86,65 @@ const DrawerHeader = styled('div')(({ theme }) => ({
   ...theme.mixins.toolbar,
 }));
 
-const menuItems = menuConfig.filter((route) => route.type === 'collapse');
+// ─── Filtrage des éléments du menu par rôle ────────────────────────────────
+// ─── Filtrage des éléments du menu par rôle ────────────────────────────────
+const filterMenuByRoles = (items, userRoles) => {
+  // ✅ SI L'UTILISATEUR EST ADMINISTRATEUR → IL VOIT TOUT
+  if (userRoles && userRoles.includes('Administrateur')) {
+    return items; // Retourne tous les éléments sans filtrage
+  }
+
+  // Sinon, on applique le filtrage normal pour les autres rôles
+  if (!userRoles || userRoles.length === 0) {
+    // Si l'utilisateur n'a pas encore de rôles, on affiche uniquement les éléments "All"
+    return items.filter(item => item.UserRole && item.UserRole.includes('All'));
+  }
+
+  return items.filter(item => {
+    if (!item.UserRole) return false;
+    // Si l'élément est accessible à tous
+    if (item.UserRole.includes('All')) return true;
+    // Vérifie si l'un des rôles de l'utilisateur est dans la liste des rôles autorisés
+    return item.UserRole.some(role => userRoles.includes(role));
+  });
+};
 
 export default function Sidebar({ open, handleDrawerClose }) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const { user } = useAuth();
 
-  // 1. Séparer l'élément "paramètres" du reste
-  const settingsItem = menuItems.find(item => item.key === 'Paramètres');
-  const topMenuItems = menuItems.filter(item => item.key !== 'Paramètres');
+  // Rôles de l'utilisateur (tableau de noms, ex: ["Administrateur", "Chef de Centre"])
+  const userRoles = user?.roles || [];
 
+  // Récupérer tous les éléments de type 'collapse'
+  const allMenuItems = menuConfig.filter(route => route.type === 'collapse');
+
+  // Filtrer les éléments accessibles selon les rôles
+  const accessibleItems = filterMenuByRoles(allMenuItems, userRoles);
+
+  // Séparer "Paramètres" du reste
+  const settingsItem = accessibleItems.find(item => item.key === 'Paramètres');
+  const topMenuItems = accessibleItems.filter(item => item.key !== 'Paramètres');
+
+  // ─── Données utilisateur ──────────────────────────────────────────────────
+  const fullName = user?.full_name || user?.name || 'Utilisateur';
+  const username = user?.username || '';
+  const email = user?.email || '';
+  const avatarSrc = user?.pdp || null;
+  const isOnline = true; // ou user?.is_connected
+
+  const getInitials = (name) => {
+    if (!name) return '?';
+    return name
+      .split(' ')
+      .map(word => word.charAt(0))
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  // ─── Styles ──────────────────────────────────────────────────────────────
   const getListItemButtonSx = (isOpen) => [
     {
       minHeight: 48,
@@ -138,6 +188,7 @@ export default function Sidebar({ open, handleDrawerClose }) {
     },
   });
 
+  // ─── Contenu du drawer ────────────────────────────────────────────────────
   const drawerContent = (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <DrawerHeader>
@@ -145,7 +196,6 @@ export default function Sidebar({ open, handleDrawerClose }) {
           {theme.direction === 'rtl' ? <ChevronRightIcon /> : <ChevronLeftIcon />}
         </IconButton>
       </DrawerHeader>
-
 
       {/* Menu principal (sans paramètres) */}
       <List sx={{ px: 1, pt: 2 }}>
@@ -163,10 +213,9 @@ export default function Sidebar({ open, handleDrawerClose }) {
         ))}
       </List>
 
-      {/* Pousse les éléments suivants vers le bas */}
       <Box sx={{ flexGrow: 1 }} />
-      
-      {/* Paramètres (toujours visible, même fermé) */}
+
+      {/* Paramètres (toujours en bas) */}
       <List sx={{ px: 1, pb: 1, mt: 1 }}>
         {settingsItem && (
           <ListItem disablePadding sx={{ display: 'block', mb: 0.5 }}>
@@ -188,18 +237,47 @@ export default function Sidebar({ open, handleDrawerClose }) {
           <Divider />
           <List sx={{ px: 1, pb: 2, mt: 1 }}>
             <ListItem disablePadding sx={{ display: 'block', mb: 1 }}>
-              <ListItemButton sx={getListItemButtonSx(open)}>
+              <ListItemButton
+                component={NavLink}
+                to="/profile"
+                sx={getListItemButtonSx(open)}
+              >
                 <ListItemIcon sx={getListItemIconSx(open)}>
-                  <Avatar sx={{ width: 50, height: 50, bgcolor: '#FFC107', color: '#1A1A1A' }}>
-                    <img src={hwasPdp} alt="" width={50} height={50} />
+                  <Avatar
+                    sx={{
+                      width: 50,
+                      height: 50,
+                      bgcolor: '#FFC107',
+                      color: '#1A1A1A',
+                      fontSize: '1.1rem',
+                    }}
+                    src={avatarSrc || undefined}
+                    alt={fullName}
+                  >
+                    {!avatarSrc && getInitials(fullName)}
                   </Avatar>
                 </ListItemIcon>
                 <ListItemText
-                  primary="MARZOUK"
-                  secondary="Admin • Online"
+                  primary={username || fullName}
+                  secondary={
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.2 }}>
+                      <Box
+                        sx={{
+                          width: 8,
+                          height: 8,
+                          borderRadius: '50%',
+                          bgcolor: isOnline ? '#22c55e' : '#ef4444',
+                          display: 'inline-block',
+                        }}
+                      />
+                      <Typography variant="caption" sx={{ color: isOnline ? '#22c55e' : '#ef4444' }}>
+                        {isOnline ? 'En ligne' : 'Hors ligne'}
+                      </Typography>
+                    </Box>
+                  }
                   sx={getListItemTextSx(open)}
                   secondaryTypographyProps={{
-                    style: { fontSize: '0.7rem', color: '#10B981' },
+                    style: { fontSize: '0.7rem', color: isOnline ? '#10B981' : '#ef4444' },
                   }}
                 />
               </ListItemButton>
